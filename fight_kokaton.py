@@ -164,6 +164,33 @@ class Score:
         self.img = self.fonto.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.img, self.rct)
 
+class Explosion:
+    """
+    爆発エフェクト
+    """
+    def __init__(self,bomb:Bomb):
+        """
+        爆発画像のSurfaceリスト
+
+        引数: bomb
+        """
+        img = pg.image.load("fig/explosion.gif")
+        self.imgs = [img, pg.transform.flip(img, True, True)]
+        self.img = self.imgs[0]
+        self.rct = self.img.get_rect()
+        self.rct.center = bomb.rct.center
+        self.life = 30  # 表示時間（フレーム数）
+
+    def update(self, screen: pg.Surface):
+        """
+        爆発経過時間を1減らし，画像を交互に切り替えて描画する
+        引数 screen：画面Surface
+        """
+        self.life -= 1
+        if self.life > 0:
+            self.img = self.imgs[self.life // 5 % 2]  # 5フレームごとに切り替え
+            screen.blit(self.img, self.rct)
+
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
@@ -173,6 +200,7 @@ def main():
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     beams = []  # ビームのリスト
     score = Score()
+    exps = []
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -200,6 +228,7 @@ def main():
                 if beam is None:
                     continue
                 if beam.rct.colliderect(bomb.rct):
+                    exps.append(Explosion(bomb))
                     beams[i] = None
                     bombs[b] = None
                     bird.change_img(6, screen)
@@ -208,6 +237,7 @@ def main():
         bombs = [bomb for bomb in bombs if bomb is not None]
         beams = [beam for beam in beams if beam is not None]
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
+        exps = [exp for exp in exps if exp.life > 0]     # ← 追加
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
@@ -215,6 +245,8 @@ def main():
             beam.update(screen)
         for bomb in bombs:
             bomb.update(screen)
+        for exp in exps:
+            exp.update(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
