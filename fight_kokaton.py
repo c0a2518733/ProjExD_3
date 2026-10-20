@@ -196,6 +196,31 @@ class Explosion:
             screen.blit(self.img, self.rct)
 
 
+class Life:
+    """
+    こうかとんの残りライフを表示するクラス
+    """
+    def __init__(self, num: int = 3):
+        """
+        フォント，色，ライフの初期値を設定し，文字列Surfaceを生成する
+        引数 num：ライフの初期値
+        """
+        self.fonto = pg.font.Font(None, 50)
+        self.color = (255, 0, 0)
+        self.life = num
+        self.img = self.fonto.render(f"Life: {self.life}", 0, self.color)
+        self.rct = self.img.get_rect()
+        self.rct.center = 100, 50
+
+    def update(self, screen: pg.Surface):
+        """
+        現在のライフを文字列Surfaceにして画面に描画する
+        引数 screen：画面Surface
+        """
+        self.img = self.fonto.render(f"Life: {self.life}", 0, self.color)
+        screen.blit(self.img, self.rct)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -205,6 +230,7 @@ def main():
     beams = []  # ビームのリスト
     score = Score()
     exps = []
+    life = Life(3)
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -216,16 +242,22 @@ def main():
                 beams.append(Beam(bird))
         screen.blit(bg_img, [0, 0])
 
-        for bomb in bombs:
+        for b, bomb in enumerate(bombs):
             if bird.rct.colliderect(bomb.rct):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                bird.change_img(8, screen)
-                fonto = pg.font.Font(None, 80)
-                txt = fonto.render("Game Over", True, (255, 0, 0))
-                screen.blit(txt, [WIDTH//2-150, HEIGHT//2])
-                pg.display.update()
-                time.sleep(1)
-                return
+                exps.append(Explosion(bomb))
+                bombs[b] = None  # ぶつかった爆弾は消す
+                life.life -= 1  # ライフを1減らす
+        bombs = [bomb for bomb in bombs if bomb is not None]
+        if life.life <= 0:
+            # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
+            bird.change_img(8, screen)
+            life.update(screen)
+            fonto = pg.font.Font(None, 80)
+            txt = fonto.render("Game Over", True, (255, 0, 0))
+            screen.blit(txt, [WIDTH//2-150, HEIGHT//2])
+            pg.display.update()
+            time.sleep(1)
+            return
 
         for b, bomb in enumerate(bombs):
             for i, beam in enumerate(beams):
@@ -241,7 +273,7 @@ def main():
         bombs = [bomb for bomb in bombs if bomb is not None]
         beams = [beam for beam in beams if beam is not None]
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
-        exps = [exp for exp in exps if exp.life > 0]     # ← 追加
+        exps = [exp for exp in exps if exp.life > 0]
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
@@ -252,6 +284,7 @@ def main():
         for exp in exps:
             exp.update(screen)
         score.update(screen)
+        life.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
