@@ -221,6 +221,33 @@ class Life:
         screen.blit(self.img, self.rct)
 
 
+class BombSpawner:
+    """
+    一定時間ごとに爆弾を補充するクラス
+    """
+    def __init__(self, interval: int = 150, max_num: int = 10):
+        """
+        補充の間隔と爆弾の最大数を設定する
+        引数1 interval：補充する間隔（フレーム数）
+        引数2 max_num：画面内の爆弾の最大数
+        """
+        self.interval = interval
+        self.max_num = max_num
+
+    def update(self, bombs: list, bird: Bird, tmr: int):
+        """
+        一定時間ごとに，こうかとんから離れた位置に爆弾を1個追加する
+        引数1 bombs：爆弾のリスト
+        引数2 bird：こうかとん（Birdインスタンス）
+        引数3 tmr：経過フレーム数
+        """
+        if tmr > 0 and tmr % self.interval == 0 and len(bombs) < self.max_num:
+            bomb = Bomb((255, 0, 0), 10)
+            while math.dist(bomb.rct.center, bird.rct.center) < 200:
+                bomb = Bomb((255, 0, 0), 10)  # こうかとんの近くなら作り直す
+            bombs.append(bomb)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -231,6 +258,7 @@ def main():
     score = Score()
     exps = []
     life = Life(3)
+    spawner = BombSpawner(150, 10)
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -274,6 +302,7 @@ def main():
         beams = [beam for beam in beams if beam is not None]
         beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]
         exps = [exp for exp in exps if exp.life > 0]
+        spawner.update(bombs, bird, tmr)  # 爆弾の補充
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
