@@ -9,6 +9,7 @@ import pygame as pg
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
 NUM_OF_BOMBS = 5
+CLEAR_SCORE = 10  # クリアに必要なスコア
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -248,6 +249,27 @@ class BombSpawner:
             bombs.append(bomb)
 
 
+class GameClear:
+    """
+    ゲームクリア画面を表示するクラス
+    """
+    def __init__(self):
+        """
+        「Game Clear」の文字列Surfaceを生成する
+        """
+        self.fonto = pg.font.Font(None, 80)
+        self.img = self.fonto.render("Game Clear", True, (255, 255, 0))
+        self.rct = self.img.get_rect()
+        self.rct.center = WIDTH // 2, HEIGHT // 2
+
+    def update(self, screen: pg.Surface):
+        """
+        「Game Clear」を画面に描画する
+        引数 screen：画面Surface
+        """
+        screen.blit(self.img, self.rct)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -259,6 +281,7 @@ def main():
     exps = []
     life = Life(3)
     spawner = BombSpawner(150, 10)
+    game_clear = GameClear()
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -314,6 +337,13 @@ def main():
             exp.update(screen)
         score.update(screen)
         life.update(screen)
+        if score.score >= CLEAR_SCORE:
+            # クリア時に，こうかとんを喜ばせて「Game Clear」を2秒間表示させる
+            bird.change_img(6, screen)
+            game_clear.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
         pg.display.update()
         tmr += 1
         clock.tick(50)
